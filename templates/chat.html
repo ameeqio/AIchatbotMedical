@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>wellnexx - AI Public Health Chatbot</title>
+  <!-- Flask way of linking CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+</head>
+
+<body>
+  <div class="chat-container">
+    <header class="chat-header">
+      <img src="https://img.icons8.com/ios-filled/100/ffffff/stethoscope.png" alt="Wellnexx Logo" class="logo">
+      <h1>Wellnexx</h1>
+    </header>
+
+
+    <div class="chat-box" id="chat-box">
+      <div class="bot-message fade-in">👋 Hello! I am your AI-driven Public Health Assistant. How can I help you today?</div>
+    </div>
+
+    <div class="chat-input">
+      <input type="text" id="user-input" placeholder="Type your message...">
+      <button id="send-btn">➤</button>
+    </div>
+  </div>
+
+<script>
+  const sendBtn = document.getElementById("send-btn");
+  const userInput = document.getElementById("user-input");
+  const chatBox = document.getElementById("chat-box");
+
+  function addMessage(message, type) {
+    const msgDiv = document.createElement("div");
+    msgDiv.classList.add(type === "user" ? "user-message" : "bot-message", "fade-in");
+    msgDiv.innerHTML = message; // use innerHTML for typing indicator
+    chatBox.appendChild(msgDiv);
+    chatBox.scrollTop = chatBox.scrollHeight;
+    return msgDiv; // return element for updates
+  }
+
+  async function sendMessage(message) {
+    // add user message
+    addMessage(message, "user");
+
+    // show typing indicator
+    const typingMsg = addMessage(
+      `<div class="typing"><span></span><span></span><span></span></div>`,
+      "bot"
+    );
+
+    try {
+      const response = await fetch("/get", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: `msg=${encodeURIComponent(message)}`
+      });
+
+      const data = await response.text();
+
+      // letter-by-letter typing effect
+      typingMsg.innerHTML = "";
+      let i = 0;
+      const interval = setInterval(() => {
+        if (i < data.length) {
+          typingMsg.innerHTML += data.charAt(i);
+          i++;
+          chatBox.scrollTop = chatBox.scrollHeight;
+        } else {
+          clearInterval(interval);
+        }
+      }, 30);
+
+    } catch (err) {
+      typingMsg.innerHTML = "⚠️ Error connecting to server";
+    }
+
+    // clear input box
+    userInput.value = "";
+  }
+
+  sendBtn.addEventListener("click", () => {
+    const message = userInput.value.trim();
+    if (message) sendMessage(message);
+  });
+
+  userInput.addEventListener("keypress", (e) => {
+    if (e.key === "Enter") sendBtn.click();
+  });
+</script>
+
+
+
+
+</body>
+</html>
